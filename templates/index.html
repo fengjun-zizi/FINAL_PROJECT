@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DVD Rental — Interactive Dashboard</title>
+  <link rel="stylesheet" href="/static/css/styles.css?v=20260512-rental-clarity" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+</head>
+<body data-theme="dark">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">🎬</div>
+      <div class="brand-name">DVD Rental BI</div>
+      <div class="brand-sub">GROUP PRESENTATION</div>
+    </div>
+    <nav class="nav">
+      <a class="nav-item active" data-target="section-overview">🎬 Overview Film &amp; Genre</a>
+      <a class="nav-item" data-target="section-popularity">📊 Popularity &amp; Rental</a>
+      <a class="nav-item" data-target="section-actor">⭐ Actor &amp; Performance</a>
+      <a class="nav-item" data-target="section-revenue">💰 Revenue &amp; Customer</a>
+    </nav>
+
+    <div class="theme-picker">
+      <div class="theme-label">Theme</div>
+      <div class="theme-buttons">
+        <button class="theme-btn" data-theme="dark" title="Dark"></button>
+        <button class="theme-btn" data-theme="light" title="Light"></button>
+        <button class="theme-btn" data-theme="gold" title="Gold"></button>
+        <button class="theme-btn" data-theme="ocean" title="Ocean"></button>
+        <button class="theme-btn" data-theme="sunset" title="Sunset"></button>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div><span>Database:</span> dvdrental</div>
+      <div><span>Stack:</span> FastAPI · Plotly · DeepSeek</div>
+      <div><span>Mode:</span> Interactive AI</div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+
+    <!-- ===== OVERVIEW ===== -->
+    <section id="section-overview" class="section">
+      <div class="hero">
+        <div class="hero-label">Film Overview · Presentation</div>
+        <div class="hero-title">Film Collection<br/>Overview &amp; Genre</div>
+        <div class="hero-desc">
+          How big and diverse this store's catalog is — total count, genre
+          distribution, age ratings, duration, and language.
+        </div>
+      </div>
+
+      <div class="kpi-row" id="kpi-overview"></div>
+
+      <p class="sec">🎭 Film Distribution by Genre</p>
+      <div class="grid two">
+        <div class="card"><div id="chart-genre-bar"></div></div>
+        <div class="card"><div id="chart-genre-pie"></div></div>
+      </div>
+
+      <p class="sec">🔞 MPAA Rating Distribution</p>
+      <div class="grid two">
+        <div class="card"><div id="chart-rating-pie"></div></div>
+        <div class="card" style="display:flex;flex-direction:column;justify-content:center;min-height:420px;">
+          <b style="color:var(--accent);font-size:1rem;margin-bottom:0.8rem;">📋 MPAA Rating Guide</b>
+          <p style="margin:0.5rem 0;font-size:0.88rem;color:var(--muted2);"><span class="badge teal">G</span> All ages, safe for children</p>
+          <p style="margin:0.5rem 0;font-size:0.88rem;color:var(--muted2);"><span class="badge teal">PG</span> Parental guidance suggested</p>
+          <p style="margin:0.5rem 0;font-size:0.88rem;color:var(--muted2);"><span class="badge gold">PG-13</span> Not suitable for children under 13</p>
+          <p style="margin:0.5rem 0;font-size:0.88rem;color:var(--muted2);"><span class="badge purple">R</span> 17+ (without parent/guardian)</p>
+          <p style="margin:0.5rem 0;font-size:0.88rem;color:var(--muted2);"><span class="badge red">NC-17</span> For adult audiences 18+ only</p>
+          <p style="margin-top:1rem;font-size:0.85rem;color:var(--red);">⚠️ Place <b>NC-17</b> and <b>R</b> in a separate area away from children.</p>
+        </div>
+      </div>
+
+      <p class="sec">⏱️ Average Film Duration by Genre</p>
+      <div class="card"><div id="chart-duration-genre"></div></div>
+
+      <p class="sec">📅 Allowed Rental Period Distribution</p>
+      <div class="card"><div id="chart-rental-period"></div></div>
+
+      <p class="sec">🗺️ Heatmap: Genre × Rating</p>
+      <div class="card"><div id="chart-genre-rating"></div></div>
+
+      <p class="sec">🏆 Longest &amp; Shortest Film per Genre</p>
+      <div class="card"><div id="chart-genre-extremes"></div></div>
+    </section>
+
+    <!-- ===== POPULARITY ===== -->
+    <section id="section-popularity" class="section">
+      <div class="hero">
+        <div class="hero-label">Popularity &amp; Rental · Presentation</div>
+        <div class="hero-title">Film Popularity<br/>&amp; Rental Analysis</div>
+        <div class="hero-desc">
+          Understand current rental demand, weekly/monthly patterns, store winners,
+          low-performing inventory, and clear store-by-store rental movement over time.
+        </div>
+      </div>
+
+      <div class="kpi-row" id="kpi-popularity"></div>
+
+      <div class="popularity-guide">
+        <div>
+          <b>Current Demand</b>
+          <span>Which films are already popular and which genres drive rentals.</span>
+        </div>
+        <div>
+          <b>Rental Timing</b>
+          <span>How demand changes by month, store, and day of week.</span>
+        </div>
+        <div>
+          <b>Inventory Decisions</b>
+          <span>Find high-demand winners and low-rental titles that need review.</span>
+        </div>
+      </div>
+
+      <p class="sec">🏆 Top Most Rented Films <span id="genre-filter-tag" class="filter-tag" style="display:none"></span></p>
+      <div class="card"><div id="chart-top-rented"></div></div>
+
+      <p class="sec">📈 Monthly Rental Trend — Store 1 vs Store 2</p>
+      <div class="card">
+        <div id="monthly-rental-insight" class="chart-insight"></div>
+        <div id="chart-monthly-rental"></div>
+      </div>
+
+      <p class="sec">📅 Rental Pattern by Day of the Week</p>
+      <div class="card"><div id="chart-rental-dow"></div></div>
+
+      <p class="sec">🏪 Top 5 Most Rented Films per Store</p>
+      <div class="card"><div id="chart-store-top"></div></div>
+
+      <p class="sec">😴 Bottom 15 Least Rented Films</p>
+      <div class="card"><div id="chart-least-rented"></div></div>
+    </section>
+
+    <!-- ===== ACTOR ===== -->
+    <section id="section-actor" class="section">
+      <div class="hero">
+        <div class="hero-label">Actor &amp; Performance · Presentation</div>
+        <div class="hero-title">Actor &amp; Film<br/>Performance</div>
+        <div class="hero-desc">Who appears most often, and whose films rent the best.</div>
+      </div>
+
+      <div class="kpi-row" id="kpi-actor"></div>
+
+      <div class="grid two">
+        <div class="card"><p class="sec inline">🎬 Top Actors — Film Count</p><div id="chart-actor-films"></div></div>
+        <div class="card"><p class="sec inline">📼 Top Actors — Rental Count</p><div id="chart-actor-rentals"></div></div>
+      </div>
+
+      <p class="sec">🎭 Genre Mix — Top 5 Actors</p>
+      <div class="card"><div id="chart-actor-genre"></div></div>
+    </section>
+
+    <!-- ===== REVENUE ===== -->
+    <section id="section-revenue" class="section">
+      <div class="hero">
+        <div class="hero-label">Revenue &amp; Customer · Presentation</div>
+        <div class="hero-title">Revenue &amp; Customer<br/>Analysis</div>
+        <div class="hero-desc">How much revenue, where it comes from, and who the loyal customers are.</div>
+      </div>
+
+      <div class="kpi-row" id="kpi-revenue"></div>
+
+      <p class="sec">📈 Monthly Revenue Trend per Store</p>
+      <div class="card"><div id="chart-revenue-store"></div></div>
+
+      <p class="sec">💰 Revenue — Highest vs Lowest Month</p>
+      <div class="card"><div id="chart-revenue-highlight"></div></div>
+
+      <div class="grid two">
+        <div class="card"><p class="sec inline">🎭 Revenue by Genre</p><div id="chart-revenue-genre"></div></div>
+        <div class="card"><p class="sec inline">💎 Top 10 Customers</p><div id="chart-top-customers"></div></div>
+      </div>
+    </section>
+
+    <!-- AI render zone (charts/tables the AI creates on demand) -->
+    <section id="ai-output" class="section ai-output" style="display:none">
+      <p class="sec">🤖 AI-Generated Output</p>
+      <div class="card">
+        <button class="ai-close" onclick="document.getElementById('ai-output').style.display='none'">✕ Close</button>
+        <div id="chart-ai"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== FLOATING CHAT ===== -->
+  <button id="chat-fab" class="chat-fab" title="Ask the AI">
+    <span class="fab-icon">💬</span>
+    <span class="fab-pulse"></span>
+  </button>
+
+  <div id="chat-window" class="chat-window">
+    <div class="chat-header">
+      <div class="chat-title">
+        <span class="chat-dot"></span>
+        <div>
+          <div class="chat-name">DVD AI Assistant</div>
+          <div class="chat-status">Online · DeepSeek powered</div>
+        </div>
+      </div>
+      <div class="chat-actions">
+        <button id="chat-clear" title="Clear conversation">🗑</button>
+        <button id="chat-min" title="Minimize">—</button>
+      </div>
+    </div>
+
+    <div id="chat-messages" class="chat-messages"></div>
+
+    <div class="chat-suggest" id="chat-suggest">
+      <button class="chip" data-q="Tampilkan top 10 film paling sering disewa">Top 10 film tersewa</button>
+      <button class="chip" data-q="Siapa top 5 customer dengan spending tertinggi?">Top 5 customer</button>
+      <button class="chip" data-q="Ubah tema dashboard ke ocean">Tema ocean</button>
+      <button class="chip" data-q="Change the background to green">Background hijau</button>
+      <button class="chip" data-q="Filter top film genre Action saja">Filter Action</button>
+      <button class="chip" data-q="Show me revenue by genre">Revenue by genre</button>
+      <button class="chip" data-q="Generate a table of the top 10 rented films">Top films table</button>
+      <button class="chip" data-q="Ubah judul dashboard di halaman ini menjadi DVD Rental AI Studio">Ubah judul halaman</button>
+    </div>
+
+    <div class="chat-input-row">
+      <textarea id="chat-input" rows="1" placeholder="Ask only about this DVD Rental dashboard..."></textarea>
+      <button id="chat-send">➤</button>
+    </div>
+  </div>
+
+    <script src="/static/js/dashboard.js?v=20260512-custom-chart"></script>
+    <script src="/static/js/chat.js?v=20260512-custom-chart"></script>
+  </body>
+  </html>
