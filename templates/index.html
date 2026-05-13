@@ -22,6 +22,7 @@
       <a class="nav-item" data-target="section-popularity">📊 Popularity &amp; Rental</a>
       <a class="nav-item" data-target="section-actor">⭐ Actor &amp; Performance</a>
       <a class="nav-item" data-target="section-revenue">💰 Revenue &amp; Customer</a>
+      <a class="nav-item" data-target="section-ml">🤹 Machine Learning Studio</a>
     </nav>
 
     <div class="theme-picker">
@@ -176,6 +177,69 @@
       <div class="grid two">
         <div class="card"><p class="sec inline">🎭 Revenue by Genre</p><div id="chart-revenue-genre"></div></div>
         <div class="card"><p class="sec inline">💎 Top 10 Customers</p><div id="chart-top-customers"></div></div>
+      </div>
+    </section>
+
+    <section id="section-ml" class="section">
+      <div class="hero">
+        <div class="hero-label">Machine Learning 路 Local Models</div>
+        <div class="hero-title">Machine Learning<br/>Studio</div>
+        <div class="hero-desc">
+          Separate local machine learning tools for Transformer inference and time-series forecasting.
+          This section runs independently from the floating AI chat.
+        </div>
+      </div>
+
+      <div class="ml-guide">
+        <div>
+          <b>Local Transformer</b>
+          <span>Run local text classification or embeddings from a downloaded Transformer model folder.</span>
+        </div>
+        <div>
+          <b>Time Series Forecast</b>
+          <span>Preview the next few months of rental or revenue movement using a lightweight forecast model.</span>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <div class="card ml-card">
+          <p class="sec inline">馃 Local Transformer Inference</p>
+          <div id="ml-transformer-status" class="ml-status"></div>
+          <div class="ml-form">
+            <label for="ml-transformer-text">Input text</label>
+            <textarea id="ml-transformer-text" rows="6" placeholder="Example: Revenue is slowing down but rental demand remains strong."></textarea>
+            <label for="ml-transformer-labels">Labels (comma separated, for zero-shot classification)</label>
+            <input id="ml-transformer-labels" type="text" placeholder="revenue risk, rental growth, customer churn" />
+            <div class="ml-inline">
+              <label for="ml-transformer-topk">Top K</label>
+              <input id="ml-transformer-topk" type="number" min="1" max="10" value="3" />
+              <button id="ml-transformer-run" type="button">Run Transformer</button>
+            </div>
+          </div>
+          <div id="ml-transformer-result" class="ml-result"></div>
+        </div>
+
+        <div class="card ml-card">
+          <p class="sec inline">馃搱 Time Series Forecast</p>
+          <div class="ml-form">
+            <label for="ml-forecast-dataset">Dataset</label>
+            <select id="ml-forecast-dataset">
+              <option value="monthly_revenue_total">Monthly Revenue</option>
+              <option value="monthly_revenue_store_1">Monthly Revenue - Store 1</option>
+              <option value="monthly_revenue_store_2">Monthly Revenue - Store 2</option>
+              <option value="monthly_rental_total">Monthly Rentals</option>
+              <option value="monthly_rental_store_1">Monthly Rentals - Store 1</option>
+              <option value="monthly_rental_store_2">Monthly Rentals - Store 2</option>
+            </select>
+            <div class="ml-inline">
+              <label for="ml-forecast-horizon">Forecast horizon (months)</label>
+              <input id="ml-forecast-horizon" type="number" min="1" max="12" value="4" />
+              <button id="ml-forecast-run" type="button">Run Forecast</button>
+            </div>
+          </div>
+          <div id="ml-forecast-summary" class="chart-insight ml-summary"></div>
+          <div id="chart-ml-forecast"></div>
+        </div>
       </div>
     </section>
 

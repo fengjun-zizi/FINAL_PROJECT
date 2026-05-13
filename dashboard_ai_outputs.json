@@ -1,4 +1,217 @@
 {
-  "items": [],
-  "updatedAt": 1778612863424
+  "items": [
+    {
+      "type": "chart",
+      "chart": "top_rented_films",
+      "title": "Top 10 Rented Films",
+      "data": [
+        {
+          "title": "Bucket Brotherhood",
+          "genre": "Travel",
+          "rating": "PG",
+          "total_rentals": 34,
+          "rental_rate": 4.99
+        },
+        {
+          "title": "Rocketeer Mother",
+          "genre": "Foreign",
+          "rating": "PG-13",
+          "total_rentals": 33,
+          "rental_rate": 0.99
+        },
+        {
+          "title": "Grit Clockwork",
+          "genre": "Games",
+          "rating": "PG",
+          "total_rentals": 32,
+          "rental_rate": 0.99
+        },
+        {
+          "title": "Scalawag Duck",
+          "genre": "Music",
+          "rating": "NC-17",
+          "total_rentals": 32,
+          "rental_rate": 4.99
+        },
+        {
+          "title": "Juggler Hardly",
+          "genre": "Animation",
+          "rating": "PG-13",
+          "total_rentals": 32,
+          "rental_rate": 0.99
+        },
+        {
+          "title": "Forward Temple",
+          "genre": "Games",
+          "rating": "NC-17",
+          "total_rentals": 32,
+          "rental_rate": 2.99
+        },
+        {
+          "title": "Ridgemont Submarine",
+          "genre": "New",
+          "rating": "PG-13",
+          "total_rentals": 32,
+          "rental_rate": 0.99
+        },
+        {
+          "title": "Timberland Sky",
+          "genre": "Classics",
+          "rating": "G",
+          "total_rentals": 31,
+          "rental_rate": 0.99
+        },
+        {
+          "title": "Wife Turn",
+          "genre": "Documentary",
+          "rating": "NC-17",
+          "total_rentals": 31,
+          "rental_rate": 4.99
+        },
+        {
+          "title": "Zorro Ark",
+          "genre": "Comedy",
+          "rating": "NC-17",
+          "total_rentals": 31,
+          "rental_rate": 4.99
+        }
+      ],
+      "createdAt": 1778663759441
+    },
+    {
+      "type": "chart",
+      "chart": "top_rented_films",
+      "title": "Top 10 Rented Films",
+      "data": [
+        {
+          "title": "Rocketeer Mother",
+          "genre": "Foreign",
+          "rating": "PG-13",
+          "total_rentals": 33,
+          "rental_rate": 0.99
+        },
+        {
+          "title": "Grit Clockwork",
+          "genre": "Games",
+          "rating": "PG",
+          "total_rentals": 32,
+          "rental_rate": 0.99
+        },
+        {
+          "title": "Scalawag Duck",
+          "genre": "Music",
+          "rating": "NC-17",
+          "total_rentals": 32,
+          "rental_rate": 4.99
+        },
+        {
+          "title": "Forward Temple",
+          "genre": "Games",
+          "rating": "NC-17",
+          "total_rentals": 32,
+          "rental_rate": 2.99
+        },
+        {
+          "title": "Juggler Hardly",
+          "genre": "Animation",
+          "rating": "PG-13",
+          "total_rentals": 32,
+          "rental_rate": 0.99
+        },
+        {
+          "title": "Bucket Brotherhood",
+          "genre": "Travel",
+          "rating": "PG",
+          "total_rentals": 32,
+          "rental_rate": 4.99
+        },
+        {
+          "title": "Ridgemont Submarine",
+          "genre": "New",
+          "rating": "PG-13",
+          "total_rentals": 32,
+          "rental_rate": 0.99
+        },
+        {
+          "title": "Timberland Sky",
+          "genre": "Classics",
+          "rating": "G",
+          "total_rentals": 31,
+          "rental_rate": 0.99
+        },
+        {
+          "title": "Wife Turn",
+          "genre": "Documentary",
+          "rating": "NC-17",
+          "total_rentals": 31,
+          "rental_rate": 4.99
+        },
+        {
+          "title": "Zorro Ark",
+          "genre": "Comedy",
+          "rating": "NC-17",
+          "total_rentals": 31,
+          "rental_rate": 4.99
+        }
+      ],
+      "createdAt": 1778663856420
+    },
+    {
+      "type": "chart",
+      "chart": "monthly_revenue",
+      "title": "Monthly Revenue",
+      "data": [
+        {
+          "month": "2007-02",
+          "total_revenue": 8346.85
+        },
+        {
+          "month": "2007-03",
+          "total_revenue": 23871.59
+        },
+        {
+          "month": "2007-04",
+          "total_revenue": 28544.49
+        },
+        {
+          "month": "2007-05",
+          "total_revenue": 514.18
+        },
+        {
+          "month": "2026-05",
+          "total_revenue": 39.92
+        }
+      ],
+      "createdAt": 1778664033640
+    },
+    {
+      "type": "chart",
+      "chart": "monthly_revenue",
+      "title": "Monthly Revenue",
+      "data": [
+        {
+          "month": "2007-02",
+          "total_revenue": 8346.85
+        },
+        {
+          "month": "2007-03",
+          "total_revenue": 23871.59
+        },
+        {
+          "month": "2007-04",
+          "total_revenue": 28544.49
+        },
+        {
+          "month": "2007-05",
+          "total_revenue": 514.18
+        },
+        {
+          "month": "2026-05",
+          "total_revenue": 39.92
+        }
+      ],
+      "createdAt": 1778664099554
+    }
+  ],
+  "updatedAt": 1778664099588
 }

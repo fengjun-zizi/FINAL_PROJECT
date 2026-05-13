@@ -657,6 +657,13 @@ const Dashboard = (() => {
     return Number(value || 0).toLocaleString();
   }
 
+  function formatMetricValue(value, metricLabel = "Value") {
+    const numeric = Number(value || 0);
+    return /revenue|\(\$\)|\$/i.test(metricLabel)
+      ? `$${numeric.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+      : formatNumber(Math.round(numeric * 100) / 100);
+  }
+
   function monthLabel(value) {
     const [year, month] = String(value || "").split("-");
     if (!year || !month) return String(value || "");
@@ -804,6 +811,225 @@ const Dashboard = (() => {
           </tbody>
         </table>
       </div>`;
+  }
+
+  function renderLocalTransformerStatus(status) {
+    const el = document.getElementById("ml-transformer-status");
+    if (!el) return;
+    if (!status) {
+      el.innerHTML = `<div class="ml-status-card">No local Transformer status is available yet.</div>`;
+      return;
+    }
+
+    const ready = Boolean(status.ready);
+    const stateLabel = ready ? "Ready" : status.enabled ? "Configured but unavailable" : "Disabled";
+    const reason = status.reason ? `<div class="ml-status-card">${escapeHtml(status.reason)}</div>` : "";
+    const labels = Array.isArray(status.default_labels) && status.default_labels.length
+      ? `<div class="ml-status-card"><b>Default labels:</b> ${status.default_labels.map(escapeHtml).join(", ")}</div>`
+      : "";
+
+    el.innerHTML = `
+      <div class="ml-state-pill ${ready ? "ready" : "offline"}">${stateLabel}</div>
+      <div class="ml-status-card">
+        <b>Task:</b> ${escapeHtml(status.task || "unknown")}<br>
+        <b>Model source:</b> ${escapeHtml(status.model_source || "not configured")}<br>
+        <b>Loaded:</b> ${status.loaded ? "yes" : "no"}
+      </div>
+      ${reason}
+      ${labels}
+    `;
+  }
+
+  function renderLocalTransformerResult(payload) {
+    const el = document.getElementById("ml-transformer-result");
+    if (!el) return;
+    if (!payload) {
+      el.innerHTML = "";
+      return;
+    }
+
+    if (payload.features) {
+      el.innerHTML = `
+        <div class="ml-result-card">
+          <b>Feature Extraction Result</b><br>
+          Token count: ${formatNumber(payload.features.token_count)}<br>
+          Embedding dim: ${formatNumber(payload.features.embedding_dim)}<br>
+          Mean pool preview: ${escapeHtml((payload.features.mean_pool_preview || []).join(", "))}
+        </div>
+      `;
+      return;
+    }
+
+    const predictions = Array.isArray(payload.predictions) ? payload.predictions : [];
+    if (!predictions.length) {
+      el.innerHTML = `<div class="ml-result-card">No predictions were returned by the local Transformer model.</div>`;
+      return;
+    }
+
+    el.innerHTML = `
+      <div class="ml-result-card">
+        <b>Top label:</b> ${escapeHtml(payload.top_label || "-")}<br>
+        <b>Top score:</b> ${Number(payload.top_score || 0).toFixed(4)}
+      </div>
+      <div class="ml-result-card">
+        <table class="ml-result-table">
+          <thead>
+            <tr><th>Label</th><th>Score</th></tr>
+          </thead>
+          <tbody>
+            ${predictions.map(item => `
+              <tr>
+                <td>${escapeHtml(item.label)}</td>
+                <td>${Number(item.score || 0).toFixed(4)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  async function runLocalTransformerInference() {
+    const textEl = document.getElementById("ml-transformer-text");
+    const labelsEl = document.getElementById("ml-transformer-labels");
+    const topkEl = document.getElementById("ml-transformer-topk");
+    const button = document.getElementById("ml-transformer-run");
+    const resultEl = document.getElementById("ml-transformer-result");
+    if (!textEl || !labelsEl || !topkEl || !button || !resultEl) return;
+
+    const text = String(textEl.value || "").trim();
+    if (!text) {
+      resultEl.innerHTML = `<div class="ml-result-card">Please enter some text first.</div>`;
+      return;
+    }
+
+    const labels = String(labelsEl.value || "")
+      .split(",")
+      .map(item => item.trim())
+      .filter(Boolean);
+    const topK = Number(topkEl.value || 3);
+    button.disabled = true;
+    resultEl.innerHTML = `<div class="ml-result-card">Running local Transformer inference...</div>`;
+
+    try {
+      const res = await fetch("/api/ml/local-transformer/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, labels, top_k: topK }),
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.detail || "Local Transformer inference failed.");
+      renderLocalTransformerResult(payload);
+    } catch (e) {
+      resultEl.innerHTML = `<div class="ml-result-card" style="color:var(--red)">Transformer inference failed: ${escapeHtml(e.message)}</div>`;
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function renderForecastSummary(payload) {
+    const el = document.getElementById("ml-forecast-summary");
+    if (!el) return;
+    const summary = payload?.summary;
+    if (!summary) {
+      el.innerHTML = "";
+      return;
+    }
+
+    const metricLabel = payload.metric_label || "Value";
+    el.innerHTML = `
+      <div><b>Latest month</b><span>${monthLabel(summary.latest_month)} - ${formatMetricValue(summary.latest_value, metricLabel)}</span></div>
+      <div><b>Historical average</b><span>${formatMetricValue(summary.average_value, metricLabel)}</span></div>
+      <div><b>Detected trend</b><span>${escapeHtml(summary.trend || "stable")} (slope ${Number(summary.slope || 0).toFixed(4)})</span></div>
+      <div><b>Forecast horizon</b><span>${formatNumber(summary.forecast_horizon || 0)} month(s)</span></div>
+    `;
+  }
+
+  function chartMlForecast(payload, target = "chart-ml-forecast") {
+    const history = Array.isArray(payload?.history) ? payload.history : [];
+    const forecast = Array.isArray(payload?.forecast) ? payload.forecast : [];
+    if (!history.length) {
+      const el = document.getElementById(target);
+      if (el) el.innerHTML = `<div style="padding:1rem;color:var(--muted2)">No time-series data is available.</div>`;
+      return;
+    }
+
+    const metricLabel = payload.metric_label || "Value";
+    const allMonths = [...history.map(row => row.month), ...forecast.map(row => row.month)];
+    const title = payload.title || "Time Series Forecast";
+
+    plot(target, [
+      {
+        type: "scatter",
+        mode: "lines+markers+text",
+        name: "History",
+        x: history.map(row => row.month),
+        y: history.map(row => Number(row.value || 0)),
+        text: history.map(row => formatMetricValue(row.value, metricLabel)),
+        textposition: "top center",
+        line: { width: 3, color: "#2dd4bf" },
+        marker: { size: 7, color: "#2dd4bf" },
+        hovertemplate: "<b>%{x}</b><br>History: %{y:,.2f}<extra></extra>",
+      },
+      {
+        type: "scatter",
+        mode: "lines+markers+text",
+        name: "Forecast",
+        x: forecast.map(row => row.month),
+        y: forecast.map(row => Number(row.value || 0)),
+        text: forecast.map(row => formatMetricValue(row.value, metricLabel)),
+        textposition: "top center",
+        line: { width: 3, color: "#f5c842", dash: "dot" },
+        marker: { size: 7, color: "#f5c842" },
+        hovertemplate: "<b>%{x}</b><br>Forecast: %{y:,.2f}<extra></extra>",
+      },
+    ], {
+      title: `${title} - historical vs forecast`,
+      margin: { l: 70, r: 35, t: 60, b: 80 },
+      legend: { orientation: "h", x: 0, y: 1.12 },
+      xaxis: {
+        title: "Month",
+        type: "category",
+        categoryorder: "array",
+        categoryarray: allMonths,
+        tickvals: allMonths,
+        ticktext: allMonths.map(monthLabel),
+        tickangle: allMonths.length > 8 ? -20 : 0,
+        automargin: true,
+      },
+      yaxis: { title: metricLabel, rangemode: "tozero", automargin: true },
+    });
+  }
+
+  async function runTimeSeriesForecast() {
+    const datasetEl = document.getElementById("ml-forecast-dataset");
+    const horizonEl = document.getElementById("ml-forecast-horizon");
+    const button = document.getElementById("ml-forecast-run");
+    const summaryEl = document.getElementById("ml-forecast-summary");
+    if (!datasetEl || !horizonEl || !button || !summaryEl) return;
+
+    const dataset = String(datasetEl.value || "monthly_revenue_total");
+    const horizon = Number(horizonEl.value || 4);
+    button.disabled = true;
+    summaryEl.innerHTML = `<div><b>Running forecast</b><span>Preparing ${escapeHtml(dataset)} for the next ${formatNumber(horizon)} month(s).</span></div>`;
+
+    try {
+      const res = await fetch("/api/ml/time-series/forecast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dataset, horizon }),
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.detail || "Time-series forecast failed.");
+      renderForecastSummary(payload);
+      chartMlForecast(payload);
+    } catch (e) {
+      summaryEl.innerHTML = `<div><b>Forecast failed</b><span style="color:var(--red)">${escapeHtml(e.message)}</span></div>`;
+      const el = document.getElementById("chart-ml-forecast");
+      if (el) el.innerHTML = "";
+    } finally {
+      button.disabled = false;
+    }
   }
 
   async function runPopularityAdvisor() {
@@ -1321,6 +1547,8 @@ const Dashboard = (() => {
       ["chart-top-customers", () => chartTopCustomers(DATA.revenue.top_customers)],
     ];
 
+    renderLocalTransformerStatus(DATA.ml?.local_transformer || null);
+
     chartJobs.forEach(([target, render]) => {
       try {
         render();
@@ -1380,6 +1608,7 @@ const Dashboard = (() => {
       popularity: "section-popularity",
       actor: "section-actor",
       revenue: "section-revenue",
+      ml: "section-ml",
     };
     const id = map[name] || name;
     const el = document.getElementById(id);
@@ -1819,6 +2048,10 @@ const Dashboard = (() => {
     document.querySelectorAll(".theme-btn").forEach(btn => {
       btn.addEventListener("click", () => setTheme(btn.dataset.theme));
     });
+
+    document.getElementById("ml-transformer-run")?.addEventListener("click", runLocalTransformerInference);
+    document.getElementById("ml-forecast-run")?.addEventListener("click", runTimeSeriesForecast);
+    runTimeSeriesForecast();
 
   }
 

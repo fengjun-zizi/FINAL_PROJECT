@@ -137,37 +137,26 @@ DB_MUTATION_TABLE_ALIASES: Dict[str, set[str]] = {
 DB_QUERY_SOURCES: Dict[str, Dict[str, Any]] = {
     "payment": {
         "label": "payment records",
-        "from_sql": """
-            FROM payment p
-            LEFT JOIN rental r ON p.rental_id = r.rental_id
-            LEFT JOIN inventory i ON r.inventory_id = i.inventory_id
-            LEFT JOIN film f ON i.film_id = f.film_id
-        """,
+        "from_sql": "FROM payment p",
         "pk": "payment_id",
         "fields": {
             "payment_id": {"expr": "p.payment_id", "type": "int"},
             "customer_id": {"expr": "p.customer_id", "type": "int"},
             "staff_id": {"expr": "p.staff_id", "type": "int"},
             "rental_id": {"expr": "p.rental_id", "type": "int"},
-            "title": {"expr": "f.title", "type": "text"},
             "amount": {"expr": "p.amount", "type": "float"},
             "payment_date": {"expr": "p.payment_date", "type": "datetime"},
         },
     },
     "rental": {
         "label": "rental records",
-        "from_sql": """
-            FROM rental r
-            LEFT JOIN inventory i ON r.inventory_id = i.inventory_id
-            LEFT JOIN film f ON i.film_id = f.film_id
-        """,
+        "from_sql": "FROM rental r",
         "pk": "rental_id",
         "fields": {
             "rental_id": {"expr": "r.rental_id", "type": "int"},
             "rental_date": {"expr": "r.rental_date", "type": "datetime"},
             "inventory_id": {"expr": "r.inventory_id", "type": "int"},
             "customer_id": {"expr": "r.customer_id", "type": "int"},
-            "title": {"expr": "f.title", "type": "text"},
             "return_date": {"expr": "r.return_date", "type": "datetime"},
             "staff_id": {"expr": "r.staff_id", "type": "int"},
         },
@@ -237,7 +226,7 @@ DB_MUTATION_FIELD_ALIASES: Dict[str, Dict[str, set[str]]] = {
         "payment_date": {"payment date", "payment_date", "paid at", "transaction date", "tanggal pembayaran", "支付日期", "付款日期", "交易日期"},
     },
     "rental": {
-        "rental_id": {"rental id", "rental_id", "renta id", "renta_id", "sewa id", "租赁id", "出租id"},
+        "rental_id": {"rental id", "rental_id", "sewa id", "租赁id", "出租id"},
         "rental_date": {"rental date", "rental_date", "rent date", "tanggal rental", "tanggal sewa", "租赁日期", "出租日期"},
         "inventory_id": {"inventory id", "inventory_id", "inventory", "stock id", "copy id", "库存id", "库存"},
         "customer_id": {"customer id", "customer_id", "customer", "pelanggan", "pelanggan id", "客户id", "顾客id", "客户"},
@@ -275,23 +264,6 @@ DB_QUERY_FIELD_ALIASES: Dict[str, Dict[str, set[str]]] = {
         "release_year": {"release year", "year", "tahun", "年份"},
     },
 }
-
-# Extend whitelisted record queries so payment/rental rows can also be filtered by film title.
-DB_QUERY_SOURCES["payment"]["from_sql"] = """
-    FROM payment p
-    LEFT JOIN rental r ON p.rental_id = r.rental_id
-    LEFT JOIN inventory i ON r.inventory_id = i.inventory_id
-    LEFT JOIN film f ON i.film_id = f.film_id
-"""
-DB_QUERY_SOURCES["payment"]["fields"]["title"] = {"expr": "f.title", "type": "text"}
-DB_QUERY_SOURCES["rental"]["from_sql"] = """
-    FROM rental r
-    LEFT JOIN inventory i ON r.inventory_id = i.inventory_id
-    LEFT JOIN film f ON i.film_id = f.film_id
-"""
-DB_QUERY_SOURCES["rental"]["fields"]["title"] = {"expr": "f.title", "type": "text"}
-DB_MUTATION_FIELD_ALIASES["payment"]["title"] = {"title", "film title", "movie title", "judul", "film", "movie", "标题", "电影标题", "影片标题", "电影"}
-DB_MUTATION_FIELD_ALIASES["rental"]["title"] = {"title", "film title", "movie title", "judul", "film", "movie", "标题", "电影标题", "影片标题", "电影"}
 
 DB_QUERY_OPERATION_ALIASES: set[str] = {
     "query", "show", "list", "find", "search", "lookup", "view", "check", "get",
@@ -1461,9 +1433,10 @@ Rules for database mutations:
 - If required fields are missing, explain what is missing instead of pretending success.
 - If a referenced id does not exist, explain that reason.
 
-If the user asks something outside the DVD Rental Dashboard scope, refuse to
-answer and briefly say that you can only help with the DVD Rental dashboard.
-Do NOT emit any dashboard action block for out-of-scope requests.
+If the user asks something outside the DVD Rental Dashboard scope, you may
+answer it normally in the SAME LANGUAGE the user used. In that case, do NOT
+emit any dashboard action block unless the user is also asking you to control
+or query the dashboard.
 
 Always answer in the SAME LANGUAGE the user used.
 Be concise. Cite specific numbers from the dashboard context when relevant.
@@ -1672,14 +1645,12 @@ def choose_chat_mode(messages: List["ChatMessage"]) -> str:
 def build_system_prompt(mode: str) -> str:
     if mode == "general":
         return """
-You are the AI assistant embedded inside a DVD Rental dashboard web app.
+You are a general-purpose AI assistant embedded inside a DVD Rental dashboard web app.
 
-You must ONLY answer questions related to the DVD Rental dashboard, its data,
-its charts/tables, its UI controls, or the dvdrental database actions exposed
-through this app.
-
-If the user asks anything outside that scope, refuse briefly in the SAME
-LANGUAGE the user used, and do not emit any dashboard action block.
+Always answer in the SAME LANGUAGE the user used.
+Be concise and natural.
+Do not emit any dashboard action block unless the user is explicitly asking to
+control the dashboard UI or query dashboard data.
 """.strip()
 
     if mode == "developer":
@@ -2338,7 +2309,6 @@ INTENT_REPLACEMENTS = [
     (r"\bganti\b", " change "),
     (r"\bubah\b", " change "),
     (r"\bjadikan\b", " change "),
-    (r"\brenta\b", " rental "),
     (r"\bhapus\b", " delete "),
     (r"\btambah\b", " insert "),
     (r"\bperbarui\b", " update "),
@@ -2352,14 +2322,6 @@ INTENT_REPLACEMENTS = [
     (r"\bbuatkan\b", " create "),
     (r"\bgenerated?\b", " generate "),
 ]
-
-INTENT_REPLACEMENTS.extend([
-    (r"查询", " show "),
-    (r"查一下", " show "),
-    (r"查找", " show "),
-    (r"查看", " show "),
-    (r"查", " show "),
-])
 
 
 def normalize_intent_text(text: str) -> str:
@@ -2587,10 +2549,6 @@ def infer_db_mutation_table(text: str) -> Optional[str]:
     for table_name, aliases in DB_MUTATION_TABLE_ALIASES.items():
         if table_name in tokens or aliases.intersection(tokens) or any(alias in raw for alias in aliases):
             return table_name
-    for table_name, field_map in DB_MUTATION_FIELD_ALIASES.items():
-        for aliases in field_map.values():
-            if aliases.intersection(tokens) or any(alias in raw for alias in aliases):
-                return table_name
     return None
 
 
@@ -2633,23 +2591,6 @@ def extract_number_list_from_text(text: str, aliases: set[str]) -> List[int]:
     alias_pattern = "|".join(re.escape(alias) for alias in sorted(aliases, key=len, reverse=True))
     if not alias_pattern:
         return []
-    range_patterns = [
-        rf"(?:{alias_pattern})s?\s*(?:=|:|is|are|for|in)?\s*(\d+)\s*(?:-|to|through|until|sampai|hingga|到|至)\s*(\d+)",
-        rf"(\d+)\s*(?:-|to|through|until|sampai|hingga|到|至)\s*(\d+)\s*(?:for|as)?\s*(?:{alias_pattern})s?",
-    ]
-    for pattern in range_patterns:
-        match = re.search(pattern, raw, flags=re.IGNORECASE)
-        if not match:
-            continue
-        start = int(match.group(1))
-        end = int(match.group(2))
-        if start == end:
-            return [start]
-        if end < start:
-            start, end = end, start
-        if end - start > 200:
-            return []
-        return list(range(start, end + 1))
     patterns = [
         rf"(?:{alias_pattern})s?\s*(?:=|:|is|are|for|in)?\s*((?:\d+\s*(?:,|，|、|;|/|\bor\b|\band\b|\s+))+?\d+)",
         rf"((?:\d+\s*(?:,|，|、|;|/|\bor\b|\band\b|\s+))+?\d+)\s*(?:for|as)?\s*(?:{alias_pattern})s?",
@@ -2661,30 +2602,6 @@ def extract_number_list_from_text(text: str, aliases: set[str]) -> List[int]:
         numbers = re.findall(r"\d+", match.group(1))
         if len(numbers) >= 2:
             return [int(value) for value in numbers]
-    return []
-
-
-def extract_record_range_from_text(text: str, table_name: str) -> List[int]:
-    raw = str(text or "")
-    aliases = DB_MUTATION_TABLE_ALIASES.get(table_name, set()) | {table_name, "record", "records", "号", "条"}
-    alias_pattern = "|".join(re.escape(alias) for alias in sorted(aliases, key=len, reverse=True))
-    if not alias_pattern:
-        return []
-    patterns = [
-        rf"(?:第\s*)?(\d+)\s*(?:-|到|至|to|through|until|sampai|hingga)\s*(?:第\s*)?(\d+)\s*(?:号|条)?\s*(?:{alias_pattern})",
-        rf"(?:{alias_pattern})\s*(?:id\s*)?(?:第\s*)?(\d+)\s*(?:-|到|至|to|through|until|sampai|hingga)\s*(?:第\s*)?(\d+)",
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, raw, flags=re.IGNORECASE)
-        if not match:
-            continue
-        start = int(match.group(1))
-        end = int(match.group(2))
-        if end < start:
-            start, end = end, start
-        if end - start > 200:
-            return []
-        return list(range(start, end + 1))
     return []
 
 
@@ -2713,32 +2630,6 @@ def extract_text_value_from_text(text: str, aliases: set[str]) -> Optional[str]:
     return None
 
 
-def extract_title_guess_from_text(text: str) -> Optional[str]:
-    raw = str(text or "")
-    quoted = re.search(r"[\"“']([^\"”']{2,80})[\"”']", raw)
-    if quoted:
-        return quoted.group(1).strip()
-    patterns = [
-        r"(?:show|query|find|search|display|list|查询|查看|查找)\s+([A-Za-z][A-Za-z0-9 .,'-]{2,80})\s*(?:record|records|记录)",
-        r"([A-Za-z][A-Za-z0-9 .,'-]{2,80})\s*(?:的)?\s*(?:record|records|记录)",
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, raw, flags=re.IGNORECASE)
-        if not match:
-            continue
-        candidate = match.group(1).strip()
-        candidate = re.sub(
-            r"\b(in|inside|within|from|for|payment|payments|rental|rentals|film|films|inventory|customer|customers)\b",
-            "",
-            candidate,
-            flags=re.IGNORECASE,
-        ).strip()
-        candidate = re.sub(r"\s+", " ", candidate).strip(" ,.-")
-        if len(candidate) >= 2:
-            return candidate
-    return None
-
-
 def infer_db_mutation_action(text: str) -> Optional[Dict[str, Any]]:
     operation = infer_db_mutation_operation(text)
     table_name = infer_db_mutation_table(text)
@@ -2753,8 +2644,6 @@ def infer_db_mutation_action(text: str) -> Optional[Dict[str, Any]]:
 
     pk_aliases = set(field_aliases.get(primary_key, set())) | {"id", f"{table_name} id", f"{table_name}_id"}
     pk_values = extract_number_list_from_text(text, pk_aliases)
-    if not pk_values:
-        pk_values = extract_record_range_from_text(text, table_name)
     if len(pk_values) >= 2:
         filters[primary_key] = pk_values
     else:
@@ -2819,10 +2708,6 @@ def infer_db_query_table(text: str) -> Optional[str]:
     for table_name, aliases in DB_QUERY_TABLE_ALIASES.items():
         if table_name in tokens or aliases.intersection(tokens) or any(alias in raw for alias in aliases):
             return table_name
-    for table_name, field_map in DB_QUERY_FIELD_ALIASES.items():
-        for aliases in field_map.values():
-            if aliases.intersection(tokens) or any(alias in raw for alias in aliases):
-                return table_name
     return None
 
 
@@ -2860,56 +2745,6 @@ def infer_db_query_action(text: str) -> Optional[Dict[str, Any]]:
 
     if table_name in {"inventory", "film"} and "title" not in filters:
         title_guess = extract_text_value_from_text(text, {"title", "film", "movie", "judul", "电影", "影片"})
-        if title_guess:
-            filters["title"] = title_guess
-
-    selected_fields = list(DB_QUERY_SOURCES[table_name]["fields"].keys())
-    return {
-        "type": "query_records",
-        "table": table_name,
-        "filters": filters,
-        "limit": limit,
-        "fields": selected_fields,
-        "title": f"{DB_QUERY_SOURCES[table_name]['label'].title()} Query",
-    }
-
-
-def infer_db_query_action(text: str) -> Optional[Dict[str, Any]]:
-    table_name = infer_db_query_table(text)
-    if not table_name:
-        return None
-
-    try:
-        limit = requested_limit(text, 10)
-    except Exception:
-        limit = 10
-    limit = max(1, min(50, int(limit)))
-
-    filters: Dict[str, Any] = {}
-    for field_name, meta in DB_QUERY_SOURCES[table_name]["fields"].items():
-        aliases = DB_QUERY_FIELD_ALIASES[table_name].get(field_name, set())
-        if not aliases:
-            continue
-        extracted = None
-        if meta["type"] == "int":
-            multi_numbers = extract_number_list_from_text(text, aliases)
-            if len(multi_numbers) >= 2:
-                extracted = multi_numbers
-            else:
-                extracted = extract_number_from_text(text, aliases, allow_decimal=False)
-        elif meta["type"] == "datetime":
-            extracted = extract_datetime_from_text(text, aliases)
-        elif meta["type"] == "float":
-            extracted = extract_number_from_text(text, aliases, allow_decimal=True)
-        else:
-            extracted = extract_text_value_from_text(text, aliases)
-        if extracted is not None:
-            filters[field_name] = extracted
-
-    if table_name in {"payment", "rental", "inventory", "film"} and "title" not in filters:
-        title_guess = extract_text_value_from_text(text, {"title", "film", "movie", "judul", "电影", "影片", "鐢靛奖", "褰辩墖"})
-        if not title_guess:
-            title_guess = extract_title_guess_from_text(text)
         if title_guess:
             filters["title"] = title_guess
 
@@ -3508,9 +3343,6 @@ def should_replace_reply_with_action_ack(actions: List[Dict[str, Any]]) -> bool:
 def api_chat(req: ChatRequest):
     mode = choose_chat_mode(req.messages)
     last_user = next((m.content for m in reversed(req.messages) if m.role == "user"), "")
-
-    if mode == "general":
-        return out_of_scope_reply(last_user)
 
     if not DEEPSEEK_API_KEY:
         raise HTTPException(500, "DEEPSEEK_API_KEY is not configured.")
